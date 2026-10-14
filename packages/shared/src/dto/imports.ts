@@ -188,7 +188,7 @@ export function collectionRowSchema() {
       if (r.status === 'CLEARED' && !r.clearedDate) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['clearedDate'], message: 'CLEARED payments need a cleared date' });
       }
-      if (r.amount !== null && !D(r.amount).isPositive()) {
+      if (r.amount !== null && !D(r.amount).gt(0)) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['amount'], message: 'Amount must be > 0' });
       }
     });

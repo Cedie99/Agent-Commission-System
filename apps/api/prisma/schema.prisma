@@ -1,0 +1,571 @@
+// Agent Commission Computation System — Oracle Petroleum
+// Money, liters and rates: always Decimal(18,4). Calendar dates: @db.Date.
+// Enums must stay in sync with packages/shared/src/enums.ts (checked by a test).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── enums ─────────────────────────────
+
+enum RoleCode {
+  ADMIN
+  FINANCE
+  SSD
+  VP
+  NSM
+  SM
+  RSRM
+  SS
+  RSR
+  AS
+  SUPPORT
+}
+
+enum PersonStatus {
+  ACTIVE
+  INACTIVE
+  RESIGNED
+}
+
+enum Channel {
+  EU
+  DL
+  DR
+  TB
+  RM
+}
+
+enum AccountType {
+  AS_GENERATED
+  SS_GENERATED
+  IN_HOUSE
+}
+
+enum TermBucket {
+  COD
+  D30
+  D60
+  D90
+  D120
+  D120_PLUS
+}
+
+enum PricingType {
+  STANDARD
+  NON_STANDARD
+}
+
+enum ProductCategory {
+  LUBE
+  CHEMICAL
+}
+
+enum RateTableType {
+  VOLUME
+  PRICE
+}
+
+enum RateKind {
+  RATE
+  FORFEIT
+}
+
+enum ImportType {
+  SALES
+  COLLECTIONS
+}
+
+enum ImportStatus {
+  UPLOADED
+  VALIDATING
+  VALIDATED
+  FAILED
+  COMMITTED
+  DISCARDED
+}
+
+enum CollectionStatus {
+  CLEARED
+  PENDING
+  BOUNCED
+}
+
+enum RunType {
+  AS_WEEKLY
+  SP_MONTHLY
+}
+
+enum RunStatus {
+  QUEUED
+  COMPUTING
+  FAILED
+  DRAFT
+  SUBMITTED
+  APPROVED
+  LOCKED
+}
+
+enum ResultStatus {
+  PENDING_COLLECTION
+  COMPUTED
+  EXCEPTION
+}
+
+enum ComponentType {
+  VOLUME
+  PRICE
+  // later: SASI, AMSI, NOVI, CHEMICAL, RSR
+}
+
+enum ExceptionStatus {
+  OPEN
+  RESOLVED
+  WAIVED
+}
+
+// ───────────────────────────── identity ─────────────────────────────
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
+  passwordHash String
+  isActive     Boolean    @default(true)
+  personId     String?    @unique @db.Uuid
+  person       Person?    @relation(fields: [personId], references: [id])
+  roles        UserRole[]
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  // TODO(SSO): add entraObjectId String? @unique for Microsoft Entra sign-in.
+}
+
+model Role {
+  code  RoleCode   @id
+  name  String
+  users UserRole[]
+}
+
+model UserRole {
+  userId   String   @db.Uuid
+  roleCode RoleCode
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     Role     @relation(fields: [roleCode], references: [code])
+
+  @@id([userId, roleCode])
+}
+
+model Person {
+  id         String       @id @default(uuid()) @db.Uuid
+  code       String       @unique
+  fullName   String
+  role       RoleCode
+  managerId  String?      @db.Uuid
+  manager    Person?      @relation("ReportingLine", fields: [managerId], references: [id])
+  reports    Person[]     @relation("ReportingLine")
+  status     PersonStatus @default(ACTIVE)
+  email      String?
+  startDate  DateTime?    @db.Date
+  endDate    DateTime?    @db.Date
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user               User?
+  customersAsAS      Customer[]            @relation("CustomerAS")
+  customersAsSS      Customer[]            @relation("CustomerSS")
+  customersAsSM      Customer[]            @relation("CustomerSM")
+  components         CommissionComponent[]
+  salesBonds         SalesBond[]
+  penalties          Penalty[]
+  vouchFunds         VouchFund[]
+
+  @@index([role])
+  @@index([managerId])
+}
+
+// ───────────────────────────── master data ─────────────────────────────
+
+model Customer {
+  id              String      @id @default(uuid()) @db.Uuid
+  eric6Code       String      @unique
+  name            String
+  channel         Channel
+  accountType     AccountType
+  asId            String?     @db.Uuid
+  ssId            String?     @db.Uuid
+  smId            String?     @db.Uuid
+  as              Person?     @relation("CustomerAS", fields: [asId], references: [id])
+  ss              Person?     @relation("CustomerSS", fields: [ssId], references: [id])
+  sm              Person?     @relation("CustomerSM", fields: [smId], references: [id])
+  hasCIS          Boolean     @default(false)
+  hasCAS          Boolean     @default(false)
+  casCosignedBySM Boolean     @default(false)
+  lastOrderDate   DateTime?   @db.Date
+  active          Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  invoiceLines   SalesInvoiceLine[]
+  tpArrangements TPArrangement[]
+
+  @@index([asId])
+  @@index([name])
+}
+
+model Product {
+  id            String          @id @default(uuid()) @db.Uuid
+  eric6Code     String          @unique
+  name          String
+  litersPerUnit Decimal         @db.Decimal(18, 4)
+  category      ProductCategory
+  active        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  pricelistItems PricelistItem[]
+  invoiceLines   SalesInvoiceLine[]
+}
+
+model Pricelist {
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String
+  effectiveFrom DateTime        @db.Date
+  effectiveTo   DateTime?       @db.Date
+  items         PricelistItem[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([effectiveFrom, effectiveTo])
+}
+
+model PricelistItem {
+  id          String    @id @default(uuid()) @db.Uuid
+  pricelistId String    @db.Uuid
+  pricelist   Pricelist @relation(fields: [pricelistId], references: [id], onDelete: Cascade)
+  productId   String    @db.Uuid
+  product     Product   @relation(fields: [productId], references: [id])
+  price       Decimal   @db.Decimal(18, 4)
+
+  @@unique([pricelistId, productId])
+}
+
+// ───────────────────────────── rules ─────────────────────────────
+
+/// A versioned rate table. Never edit a table used by a LOCKED run — add a new version
+/// with a later effectiveFrom and close the old one (effectiveTo).
+model RateTable {
+  id            String        @id @default(uuid()) @db.Uuid
+  type          RateTableType
+  name          String
+  effectiveFrom DateTime      @db.Date
+  effectiveTo   DateTime?     @db.Date
+  entries       RateEntry[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([type, effectiveFrom])
+}
+
+/// channel/pricingType are null for tables where they don't apply (e.g. PRICE).
+/// A missing entry means "undefined" → EXCEPTION. kind FORFEIT means "defined as ₱0".
+model RateEntry {
+  id          String       @id @default(uuid()) @db.Uuid
+  rateTableId String       @db.Uuid
+  rateTable   RateTable    @relation(fields: [rateTableId], references: [id], onDelete: Cascade)
+  channel     Channel?
+  pricingType PricingType?
+  termBucket  TermBucket
+  kind        RateKind     @default(RATE)
+  rate        Decimal      @db.Decimal(18, 4)
+
+  @@unique([rateTableId, channel, pricingType, termBucket])
+}
+
+/// Engine configuration values (e.g. graceDays, priceCommissionChannels), versioned by effectiveFrom.
+/// isConfidential = never returned to roles outside CONFIDENTIAL_VIEWER_ROLES.
+model EngineSetting {
+  id             String   @id @default(uuid()) @db.Uuid
+  key            String
+  value          Json
+  effectiveFrom  DateTime @db.Date
+  isConfidential Boolean  @default(false)
+  description    String?
+  createdAt      DateTime @default(now())
+
+  @@unique([key, effectiveFrom])
+}
+
+// ───────────────────────────── imports ─────────────────────────────
+
+model ImportMapping {
+  id         String        @id @default(uuid()) @db.Uuid
+  importType ImportType
+  name       String
+  isDefault  Boolean       @default(false)
+  config     Json /// ImportMappingConfig (packages/shared/src/dto/imports.ts)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  batches    ImportBatch[]
+
+  @@unique([importType, name])
+}
+
+model ImportBatch {
+  id             String         @id @default(uuid()) @db.Uuid
+  type           ImportType
+  fileName       String
+  fileHash       String
+  storedPath     String
+  mappingId      String?        @db.Uuid
+  mapping        ImportMapping? @relation(fields: [mappingId], references: [id])
+  uploadedById   String         @db.Uuid
+  status         ImportStatus   @default(UPLOADED)
+  rowCount       Int            @default(0)
+  validCount     Int            @default(0)
+  errorCount     Int            @default(0)
+  duplicateCount Int            @default(0)
+  errors         Json           @default("[]") /// file-level + summary errors
+  createdAt      DateTime       @default(now())
+  committedAt    DateTime?
+
+  rows         ImportRow[]
+  invoiceLines SalesInvoiceLine[]
+  collections  Collection[]
+  exceptions   ExceptionItem[]
+
+  @@index([type, createdAt])
+  @@index([fileHash])
+}
+
+/// Staging rows for preview before commit.
+model ImportRow {
+  id          String      @id @default(uuid()) @db.Uuid
+  batchId     String      @db.Uuid
+  batch       ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  rowNo       Int
+  raw         Json
+  parsed      Json?
+  errors      Json?
+  isDuplicate Boolean     @default(false)
+
+  @@unique([batchId, rowNo])
+}
+
+// ───────────────────────────── transactions ─────────────────────────────
+
+/// One ERIC6 invoice line. Customer-derived fields (channel, accountType, payees) are
+/// snapshotted at import so later master-data edits don't silently change past runs.
+model SalesInvoiceLine {
+  id                       String      @id @default(uuid()) @db.Uuid
+  batchId                  String      @db.Uuid
+  batch                    ImportBatch @relation(fields: [batchId], references: [id])
+  invoiceNo                String
+  lineNo                   Int
+  invoiceDate              DateTime    @db.Date
+  customerId               String      @db.Uuid
+  customer                 Customer    @relation(fields: [customerId], references: [id])
+  productId                String      @db.Uuid
+  product                  Product     @relation(fields: [productId], references: [id])
+  channel                  Channel
+  accountType              AccountType
+  statedTermDays           Int
+  qty                      Decimal     @db.Decimal(18, 4)
+  liters                   Decimal     @db.Decimal(18, 4)
+  unitPrice                Decimal     @db.Decimal(18, 4)
+  pricelistPrice           Decimal?    @db.Decimal(18, 4)
+  approvedStandardDiscount Boolean     @default(false)
+  invoiceTotal             Decimal?    @db.Decimal(18, 4)
+  asId                     String?     @db.Uuid
+  ssId                     String?     @db.Uuid
+  smId                     String?     @db.Uuid
+  createdAt                DateTime    @default(now())
+
+  resultLines ComputeResultLine[]
+
+  @@unique([invoiceNo, lineNo])
+  @@index([invoiceNo])
+  @@index([invoiceDate])
+}
+
+model Collection {
+  id          String           @id @default(uuid()) @db.Uuid
+  batchId     String           @db.Uuid
+  batch       ImportBatch      @relation(fields: [batchId], references: [id])
+  invoiceNo   String
+  reference   String
+  checkNo     String           @default("") /// "" for cash, so the unique key works
+  amount      Decimal          @db.Decimal(18, 4)
+  status      CollectionStatus
+  paymentDate DateTime?        @db.Date
+  clearedDate DateTime?        @db.Date
+  createdAt   DateTime         @default(now())
+
+  @@unique([invoiceNo, reference, checkNo])
+  @@index([invoiceNo])
+  @@index([clearedDate])
+}
+
+// ───────────────────────────── computation ─────────────────────────────
+
+model ComputeRun {
+  id              String     @id @default(uuid()) @db.Uuid
+  runType         RunType
+  periodStart     DateTime   @db.Date
+  periodEnd       DateTime   @db.Date
+  status          RunStatus  @default(QUEUED)
+  /// Full resolved RuleSet used for this run (CONFIDENTIAL: contains graceDays).
+  rulesetSnapshot Json?
+  rulesetHash     String     @default("")
+  engineVersion   String     @default("")
+  totals          Json?
+  error           String?
+  notes           String?
+  createdById     String     @db.Uuid
+  createdAt       DateTime   @default(now())
+  submittedById   String?    @db.Uuid
+  submittedAt     DateTime?
+  approvedById    String?    @db.Uuid
+  approvedAt      DateTime?
+  lockedById      String?    @db.Uuid
+  lockedAt        DateTime?
+  updatedAt       DateTime   @updatedAt
+
+  resultLines ComputeResultLine[]
+  exceptions  ExceptionItem[]
+
+  @@index([runType, periodStart, periodEnd])
+  @@index([status])
+}
+
+model ComputeResultLine {
+  id                 String           @id @default(uuid()) @db.Uuid
+  runId              String           @db.Uuid
+  run                ComputeRun       @relation(fields: [runId], references: [id], onDelete: Cascade)
+  salesInvoiceLineId String           @db.Uuid
+  salesInvoiceLine   SalesInvoiceLine @relation(fields: [salesInvoiceLineId], references: [id])
+  invoiceNo          String
+  lineNo             Int
+  status             ResultStatus
+  recognitionDate    DateTime?        @db.Date
+  actualDays         Int? /// CONFIDENTIAL (reveals grace)
+  termBucket         TermBucket?
+  pricingType        PricingType?
+  collectedAmount    Decimal          @db.Decimal(18, 4)
+  invoiceTotal       Decimal          @db.Decimal(18, 4)
+  totalAmount        Decimal          @db.Decimal(18, 4)
+  exceptions         Json             @default("[]")
+
+  components    CommissionComponent[]
+  exceptionItems ExceptionItem[]
+
+  @@unique([runId, salesInvoiceLineId])
+  @@index([runId, status])
+}
+
+model CommissionComponent {
+  id            String            @id @default(uuid()) @db.Uuid
+  resultLineId  String            @db.Uuid
+  resultLine    ComputeResultLine @relation(fields: [resultLineId], references: [id], onDelete: Cascade)
+  type          ComponentType
+  payeeRole     RoleCode
+  payeeId       String            @db.Uuid
+  payee         Person            @relation(fields: [payeeId], references: [id])
+  basis         Decimal           @db.Decimal(18, 4)
+  rate          Decimal           @db.Decimal(18, 4)
+  amount        Decimal           @db.Decimal(18, 4)
+  rateEntryId   String?
+  explanation   String
+  internalNotes String? /// CONFIDENTIAL
+
+  @@index([resultLineId])
+  @@index([payeeId])
+}
+
+model ExceptionItem {
+  id            String          @id @default(uuid()) @db.Uuid
+  runId         String?         @db.Uuid
+  run           ComputeRun?     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  resultLineId  String?         @db.Uuid
+  resultLine    ComputeResultLine? @relation(fields: [resultLineId], references: [id], onDelete: Cascade)
+  importBatchId String?         @db.Uuid
+  importBatch   ImportBatch?    @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  code          String
+  message       String
+  invoiceNo     String?
+  lineNo        Int?
+  status        ExceptionStatus @default(OPEN)
+  resolution    String?
+  resolvedById  String?         @db.Uuid
+  resolvedAt    DateTime?
+  createdAt     DateTime        @default(now())
+
+  @@index([status, code])
+  @@index([runId])
+}
+
+model AuditLog {
+  id       BigInt   @id @default(autoincrement())
+  at       DateTime @default(now())
+  userId   String?  @db.Uuid
+  action   String /// e.g. "POST /compute-runs", "run.transition"
+  entity   String
+  entityId String?
+  before   Json?
+  after    Json?
+  ip       String?
+
+  @@index([entity, entityId])
+  @@index([at])
+}
+
+// ───────────────────── PLACEHOLDERS: later ledgers (no logic yet) ─────────────────────
+// Open questions 5 (Sales Bond) and 6 (Penalty tiers) must be answered before these get logic.
+
+/// TODO(ledger): Sales Bond held from commissions ("half (5%)", 105% rule — see open questions).
+model SalesBond {
+  id        String   @id @default(uuid()) @db.Uuid
+  personId  String   @db.Uuid
+  person    Person   @relation(fields: [personId], references: [id])
+  entryDate DateTime @db.Date
+  amount    Decimal  @db.Decimal(18, 4)
+  memo      String?
+  createdAt DateTime @default(now())
+}
+
+/// TODO(ledger): Penalties and recoveries (tier ranges TBD).
+model Penalty {
+  id        String   @id @default(uuid()) @db.Uuid
+  personId  String   @db.Uuid
+  person    Person   @relation(fields: [personId], references: [id])
+  entryDate DateTime @db.Date
+  amount    Decimal  @db.Decimal(18, 4)
+  reason    String?
+  createdAt DateTime @default(now())
+}
+
+/// TODO(ledger): Third-party (TP) arrangements per customer.
+model TPArrangement {
+  id         String    @id @default(uuid()) @db.Uuid
+  customerId String    @db.Uuid
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  startDate  DateTime  @db.Date
+  endDate    DateTime? @db.Date
+  terms      Json?
+  createdAt  DateTime  @default(now())
+}
+
+/// TODO(ledger): Vouch fund.
+model VouchFund {
+  id        String   @id @default(uuid()) @db.Uuid
+  personId  String   @db.Uuid
+  person    Person   @relation(fields: [personId], references: [id])
+  entryDate DateTime @db.Date
+  amount    Decimal  @db.Decimal(18, 4)
+  memo      String?
+  createdAt DateTime @default(now())
+}

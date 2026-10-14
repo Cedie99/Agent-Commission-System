@@ -27,6 +27,10 @@ const moneyRules = {
       message: 'Do not convert Decimal to JS number. Keep it Decimal; serialize with toFixed().',
     },
     {
+      selector: "CallExpression[callee.property.name=/^(isPositive|isPos)$/]",
+      message: 'decimal.js isPositive() is TRUE for zero. Use d.gt(0) (or d.gte(0) if zero is allowed).',
+    },
+    {
       selector: "NewExpression[callee.name='Decimal'][arguments.0.type='Literal'][arguments.0.value=type(number)]",
       message: "Construct Decimal from a string literal, e.g. D('3.50'), never from a float literal.",
     },
