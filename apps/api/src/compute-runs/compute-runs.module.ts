@@ -49,7 +49,7 @@ type ResultsQuery = z.infer<typeof ResultsQuery>;
 
 const resultInclude = {
   salesInvoiceLine: { include: { customer: true, product: true } },
-  components: { include: { payee: true }, orderBy: { type: 'desc' } },
+  components: { include: { payee: true }, orderBy: { type: 'asc' } }, // VOLUME, then PRICE (enum order)
 } satisfies Prisma.ComputeResultLineInclude;
 type ResultRow = Prisma.ComputeResultLineGetPayload<{ include: typeof resultInclude }>;
 
@@ -291,7 +291,18 @@ export class ComputeRunsService implements OnModuleInit {
     if (!r) throw new NotFoundException();
     this.assertVisible(r.status as RunStatus, user);
     const emails = await this.emails([r.createdById]);
-    return { ...this.runView(r, emails, user, true), allowedTransitions: allowedTransitions({ status: r.status as RunStatus, submittedById: r.submittedById }, user) };
+    const view = this.runView(r, emails, user, true);
+    if (view.totals && isPayeeScoped(user.roles)) {
+      // Line counts restricted to the payee's own lines (by the AS snapshotted on the invoice line).
+      const counts = await this.prisma.computeResultLine.groupBy({
+        by: ['status'],
+        where: { runId: id, salesInvoiceLine: { asId: user.personId ?? '00000000-0000-0000-0000-000000000000' } },
+        _count: { _all: true },
+      });
+      const n = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
+      view.totals = { ...view.totals, computed: n('COMPUTED'), pending: n('PENDING_COLLECTION'), exceptions: n('EXCEPTION') };
+    }
+    return { ...view, allowedTransitions: allowedTransitions({ status: r.status as RunStatus, submittedById: r.submittedById }, user) };
   }
 
   async results(id: string, q: ResultsQuery, user: RequestUser) {
@@ -344,7 +355,7 @@ export class ComputeRunsService implements OnModuleInit {
     if (totals && isPayeeScoped(user.roles)) {
       // Payees only see their own totals.
       const own = totals.byPayee.filter((p) => p.payeeId === user.personId);
-      totals = { ...totals, byPayee: own, grandTotal: own.reduce((acc, p) => acc.plus(toD(p.total)), toD('0')).toFixed(2), byType: {} };
+      totals = { ...totals, byPayee: own, grandTotal: own.reduce((acc, p) => acc.plus(toD(p.total)), toD('0')).toFixed(2), byType: {}, computed: own.reduce((n, p) => n + p.lineCount, 0), pending: 0, exceptions: 0 };
     }
     return {
       id: r.id,

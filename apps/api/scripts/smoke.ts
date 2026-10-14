@@ -124,6 +124,7 @@ async function main() {
   check(!/actualDays|internalNotes|rulesetSnapshot/.test(blob), 'no actualDays / internalNotes / rulesetSnapshot');
   check(asRes.data.items.every((r: any) => r.components.every((c: any) => c.payeeName.includes('One'))), 'AS sees only their own lines');
   check(asRun.data.totals.grandTotal === '11400.00', `AS sees own total ₱11,400.00 (got ${asRun.data.totals.grandTotal})`);
+  check(asRun.data.totals.computed === 6 && asRun.data.totals.byPayee.length === 1, `AS sees own line counts only (computed ${asRun.data.totals.computed})`);
   check(asSettings.status === 403, 'AS cannot read engine settings');
   check((await call(as1, 'GET', '/rates/resolve?asOf=2026-10-11')).status === 403, 'AS cannot resolve the RuleSet');
 
