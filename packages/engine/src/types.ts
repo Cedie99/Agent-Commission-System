@@ -173,6 +173,11 @@ export interface RunInput {
   periodEnd: IsoDate;
   lines: InvoiceLineInput[];
   collections: CollectionInput[];
+  /**
+   * Keys ('invoiceNo#lineNo') already paid in an APPROVED/LOCKED run of the same type.
+   * Their lines still count toward invoice totals but are excluded from results/totals.
+   */
+  alreadyPaid?: string[];
 }
 
 export interface PayeeTotal {
@@ -194,6 +199,8 @@ export interface RunOutput {
     exceptions: number;
     /** Lines recognized before periodStart (belong to an earlier run). */
     excludedEarlier: number;
+    /** Lines skipped because they were already paid (RunInput.alreadyPaid). */
+    alreadyPaid: number;
     grandTotal: Decimal;
     byType: Partial<Record<ComponentType, Decimal>>;
   };

@@ -167,7 +167,8 @@ export function loadGoldenCases(dir: string): GoldenCase[] {
     .filter((f) => /\.(json|csv)$/i.test(f))
     .sort()
     .map((f) => {
-      const text = readFileSync(join(dir, f), 'utf8').replace(/^FEFF/, '');
+      const raw = readFileSync(join(dir, f), 'utf8');
+      const text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
       return f.toLowerCase().endsWith('.json') ? loadJson(f, text) : loadCsv(f, text);
     });
 }

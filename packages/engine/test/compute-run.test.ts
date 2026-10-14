@@ -55,6 +55,15 @@ describe('computeRun', () => {
     expect(JSON.stringify(again)).toBe(JSON.stringify(out));
   });
 
+  it('skips lines already paid in a final run, but still uses them for the invoice total', () => {
+    const l1 = line({ invoiceNo: 'X', lineNo: 1 });
+    const l2 = line({ invoiceNo: 'X', lineNo: 2 }); // invoice total 200,000
+    const run = computeRun(rs, { runType: 'AS_WEEKLY', ...period, lines: [l1, l2], collections: [paid('X', '100000', 35)], alreadyPaid: ['X#1'] });
+    // only half collected → line 2 still pending (total not reduced to line 2 alone)
+    expect(run.results.map((r) => [r.lineNo, r.status])).toEqual([[2, 'PENDING_COLLECTION']]);
+    expect(run.summary.alreadyPaid).toBe(1);
+  });
+
   it('SP_MONTHLY is accepted but not implemented yet', () => {
     const sp = computeRun(rs, { runType: 'SP_MONTHLY', periodStart: '2026-02-01', periodEnd: '2026-02-28', lines, collections });
     expect(sp.results).toEqual([]);

@@ -33,8 +33,14 @@ export function computeRun(rs: RuleSet, input: RunInput): RunOutput {
 
   const results: LineResult[] = [];
   let excludedEarlier = 0;
+  let alreadyPaidCount = 0;
+  const alreadyPaid = new Set(input.alreadyPaid ?? []);
   const sorted = [...lines].sort((a, b) => (a.invoiceNo === b.invoiceNo ? a.lineNo - b.lineNo : a.invoiceNo.localeCompare(b.invoiceNo)));
   for (const line of sorted) {
+    if (alreadyPaid.has(`${line.invoiceNo}#${line.lineNo}`)) {
+      alreadyPaidCount++;
+      continue;
+    }
     const r = computeLine(rs, line, contexts.get(line.invoiceNo)!, { asOf: input.periodEnd });
     if (r.status !== 'PENDING_COLLECTION' && r.recognitionDate! < input.periodStart) {
       excludedEarlier++;
@@ -71,6 +77,7 @@ export function computeRun(rs: RuleSet, input: RunInput): RunOutput {
       pending: results.filter((r) => r.status === 'PENDING_COLLECTION').length,
       exceptions: results.filter((r) => r.status === 'EXCEPTION').length,
       excludedEarlier,
+      alreadyPaid: alreadyPaidCount,
       grandTotal: sum(totalsByPayee.map((p) => p.total)),
       byType,
     },
@@ -84,7 +91,7 @@ function emptyOutput(rs: RuleSet, warnings: string[]): RunOutput {
     ruleSetHash: rs.hash,
     results: [],
     totalsByPayee: [],
-    summary: { computed: 0, pending: 0, exceptions: 0, excludedEarlier: 0, grandTotal: ZERO, byType: {} },
+    summary: { computed: 0, pending: 0, exceptions: 0, excludedEarlier: 0, alreadyPaid: 0, grandTotal: ZERO, byType: {} },
     warnings,
   };
 }
