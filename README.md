@@ -10,6 +10,8 @@ Oracle Petroleum's internal app for computing Account Specialist and Sales Perso
 - **Rules:** [docs/commission-rules.md](docs/commission-rules.md)
 - **Open questions:** [docs/open-questions.md](docs/open-questions.md)
 - **Notes for developers and AI assistants:** [CLAUDE.md](CLAUDE.md)
+- **Git workflow for the team (push, pull, branches, PRs):** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Step-by-step user guide:** [docs/user-workflow.md](docs/user-workflow.md)
 
 ## Prerequisites
 
