@@ -16,7 +16,7 @@
     "db:deploy": "pnpm --filter @ocs/api prisma:deploy",
     "db:seed": "pnpm --filter @ocs/api prisma:seed",
     "db:reset": "pnpm --filter @ocs/api prisma:reset",
-    "samples": "pnpm --filter @ocs/api exec tsx ../../scripts/make-samples.ts"
+    "samples": "pnpm --filter @ocs/api exec tsx scripts/make-samples.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
