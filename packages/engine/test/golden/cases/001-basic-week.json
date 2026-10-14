@@ -1,0 +1,21 @@
+{
+  "name": "EXAMPLE (developer-computed): multi-line EU invoice paid by two checks",
+  "description": "Replace or extend with Finance's hand-computed cases. Invoice 2026-09-01, 30-day terms, last check cleared 2026-10-06 (35 days) → 30-day bucket.",
+  "run": { "runType": "AS_WEEKLY", "periodStart": "2026-10-05", "periodEnd": "2026-10-11" },
+  "lines": [
+    { "invoiceNo": "INV-G1", "lineNo": 1, "invoiceDate": "2026-09-01", "channel": "EU", "statedTermDays": 30, "qty": "50", "liters": "900", "unitPrice": "2000.00", "pricelistPrice": "1950.00" },
+    { "invoiceNo": "INV-G1", "lineNo": 2, "invoiceDate": "2026-09-01", "channel": "EU", "statedTermDays": 30, "qty": "100", "liters": "400", "unitPrice": "800.00", "pricelistPrice": "850.00" },
+    { "invoiceNo": "INV-G2", "lineNo": 1, "invoiceDate": "2026-09-15", "channel": "EU", "statedTermDays": 30, "qty": "10", "liters": "180", "unitPrice": "1950.00", "pricelistPrice": "1950.00" }
+  ],
+  "collections": [
+    { "invoiceNo": "INV-G1", "reference": "CHK-001", "amount": "100000.00", "clearedDate": "2026-09-20" },
+    { "invoiceNo": "INV-G1", "reference": "CHK-002", "amount": "80000.00", "clearedDate": "2026-10-06" },
+    { "invoiceNo": "INV-G2", "reference": "CHK-003", "amount": "9750.00", "clearedDate": "2026-10-07" }
+  ],
+  "expected": [
+    { "invoiceNo": "INV-G1", "lineNo": 1, "status": "COMPUTED", "termBucket": "D30", "pricingType": "STANDARD", "volume": "3150.00", "price": "2000.00" },
+    { "invoiceNo": "INV-G1", "lineNo": 2, "status": "COMPUTED", "termBucket": "D30", "pricingType": "NON_STANDARD", "volume": "600.00", "price": "0.00" },
+    { "invoiceNo": "INV-G2", "lineNo": 1, "status": "PENDING_COLLECTION" }
+  ],
+  "expectedTotal": "5750.00"
+}

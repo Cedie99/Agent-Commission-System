@@ -1,0 +1,8 @@
+# EXAMPLE (developer-computed). Replace or extend with Finance's hand-computed cases.
+invoiceNo,lineNo,invoiceDate,channel,accountType,statedTermDays,liters,qty,unitPrice,pricelistPrice,approvedStandardDiscount,collectedAmount,clearedDate,expectedStatus,expectedBucket,expectedPricingType,expectedVolume,expectedPrice,expectedExceptions
+G-101,1,2026-01-01,EU,,30,1000,1000,100,100,N,,2026-02-12,COMPUTED,D30,STANDARD,3500.00,0.00,
+G-102,1,2026-01-01,EU,,30,1000,1000,100,100,N,,2026-02-13,COMPUTED,D60,STANDARD,3000.00,0.00,
+G-103,1,2026-01-01,RM,,30,1000,1000,150,,N,,2026-01-31,COMPUTED,D30,NON_STANDARD,750.00,0.00,
+G-104,1,2026-01-01,EU,,120,1000,1000,100,100,N,,2026-05-14,EXCEPTION,D120_PLUS,,,,UNDEFINED_RATE
+G-105,1,2026-01-01,EU,,60,1000,1000,110,100,N,,2026-03-02,COMPUTED,D60,STANDARD,3000.00,6000.00,
+G-106,1,2026-01-01,DL,,30,1000,1000,100,100,N,,,PENDING_COLLECTION,,,,,
