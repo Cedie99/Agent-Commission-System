@@ -11,6 +11,7 @@
     "test": "echo \"(web: no unit tests yet)\""
   },
   "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
     "@ocs/shared": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-slot": "^1.1.0",
