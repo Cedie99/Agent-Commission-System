@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Injectable, Module, NotFoundException, Param, ParseUUIDPipe, Post, Put, Query } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { canSeeConfidential, FIELDS_BY_TYPE, ImportMappingConfig, zIsoDate, type ImportType } from '@ocs/shared';
+import { canSeeConfidential, engineSettingProblem, FIELDS_BY_TYPE, ImportMappingConfig, zIsoDate, type ImportType } from '@ocs/shared';
 import { z } from 'zod';
 import { AuditService } from '../audit/audit.service';
 import { CurrentUser, RequirePermission, type RequestUser } from '../common/auth';
@@ -33,7 +33,9 @@ export class SettingsService {
   async set(key: string, dto: SetSettingDto, user: RequestUser) {
     const prev = await this.prisma.engineSetting.findFirst({ where: { key }, orderBy: { effectiveFrom: 'desc' } });
     if (!prev) throw new NotFoundException(`Unknown setting ${key}`);
-    if (key === 'graceDays' && !(Number.isInteger(dto.value) && (dto.value as number) >= 0)) throw new BadRequestException('graceDays must be a non-negative integer');
+    // Same checks as the engine's, so a bad value is refused now instead of failing the next run.
+    const problem = engineSettingProblem(key, dto.value);
+    if (problem) throw new BadRequestException(problem);
     const row = await this.prisma.engineSetting.upsert({
       where: { key_effectiveFrom: { key, effectiveFrom: dateFromIso(dto.effectiveFrom) } },
       update: { value: dto.value as Prisma.InputJsonValue, description: dto.description ?? prev.description },
