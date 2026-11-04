@@ -5,3 +5,4 @@ export * from './zod';
 export * from './dto/core';
 export * from './dto/imports';
 export * from './dto/runs';
+export * from './dto/my-commission';
