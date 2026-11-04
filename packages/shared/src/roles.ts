@@ -34,6 +34,8 @@ export const PERMISSIONS = {
   'settings:confidential': ['ADMIN', 'FINANCE'],
   'audit:read': ['ADMIN', 'FINANCE'],
   'admin:dashboard': ['ADMIN'],
+  'users:read': ['ADMIN'],
+  'users:write': ['ADMIN'],
 } as const satisfies Record<string, readonly RoleCode[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

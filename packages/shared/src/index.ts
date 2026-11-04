@@ -7,3 +7,4 @@ export * from './dto/imports';
 export * from './dto/runs';
 export * from './dto/my-commission';
 export * from './dto/admin';
+export * from './dto/users';
