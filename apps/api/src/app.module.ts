@@ -1,6 +1,7 @@
 import { Controller, Get, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { AdminModule } from './admin/admin.module';
 import { AuditInterceptor, AuditModule } from './audit/audit.service';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard, Public } from './common/auth';
@@ -47,6 +48,7 @@ class HealthController {
     ProductsModule,
     ComputeRunsModule,
     MyCommissionModule,
+    AdminModule,
     ExceptionsModule,
     LedgersModule,
   ],
