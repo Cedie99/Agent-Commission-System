@@ -53,6 +53,11 @@ const ACTION_LABELS: Record<string, string> = {
   'pricelist.newVersion': 'Added a pricelist version',
   'pricelist.update': 'Updated a pricelist',
   'setting.set': 'Changed an engine setting',
+  'importMapping.create': 'Added an import mapping',
+  'importMapping.update': 'Updated an import mapping',
+  'user.create': 'Added a sign-in account',
+  'user.update': 'Updated a sign-in account',
+  'user.password': 'Reset a password',
 };
 const activityLabel = (a: AdminActivityView) => (a.action === 'run.transition' ? (TRANSITION_LABELS[a.toStatus ?? ''] ?? 'Changed a run') : (ACTION_LABELS[a.action] ?? a.action));
 

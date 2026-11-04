@@ -9,11 +9,13 @@ import {
   LayoutDashboard,
   List,
   LogOut,
+  Package,
   Percent,
   Settings,
   TriangleAlert,
   Upload,
   Users,
+  UserCog,
   Building2,
   type LucideIcon,
 } from 'lucide-react';
@@ -49,6 +51,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { to: '/imports', label: 'Imports', icon: Upload, perm: 'imports:read' },
       { to: '/customers', label: 'Customers', icon: Building2, perm: 'customers:read' },
+      { to: '/products', label: 'Products', icon: Package, perm: 'customers:read' },
       { to: '/people', label: 'People', icon: Users, perm: 'people:read' },
       { to: '/rates', label: 'Rates & Pricelists', icon: Percent, perm: 'rates:read' },
     ],
@@ -62,14 +65,22 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { to: '/ledgers', label: 'Ledgers', icon: BookOpen, perm: 'ledgers:read' },
     ],
   },
-  { section: 'Admin', items: [{ to: '/settings', label: 'Settings', icon: Settings, perm: 'settings:read' }] },
+  {
+    section: 'Admin',
+    items: [
+      { to: '/users', label: 'Users', icon: UserCog, perm: 'users:read' },
+      { to: '/settings', label: 'Settings', icon: Settings, perm: 'settings:read' },
+    ],
+  },
 ];
 
 const CRUMBS: Record<string, string> = {
   '': 'Dashboard',
   imports: 'Imports',
   customers: 'Customers',
+  products: 'Products',
   people: 'People',
+  users: 'Users',
   rates: 'Rates & Pricelists',
   runs: 'Compute Runs',
   exceptions: 'Exceptions',

@@ -17,9 +17,11 @@ import { Route as AppExceptionsRouteImport } from './routes/_app/exceptions'
 import { Route as AppImportsRouteImport } from './routes/_app/imports'
 import { Route as AppLedgersRouteImport } from './routes/_app/ledgers'
 import { Route as AppPeopleRouteImport } from './routes/_app/people'
+import { Route as AppProductsRouteImport } from './routes/_app/products'
 import { Route as AppRatesRouteImport } from './routes/_app/rates'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppStatementsRouteImport } from './routes/_app/statements'
+import { Route as AppUsersRouteImport } from './routes/_app/users'
 import { Route as AppRunsIndexRouteImport } from './routes/_app/runs/index'
 import { Route as AppRunsRunIdRouteImport } from './routes/_app/runs/$runId'
 
@@ -62,6 +64,11 @@ const AppPeopleRoute = AppPeopleRouteImport.update({
   path: '/people',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProductsRoute = AppProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRatesRoute = AppRatesRouteImport.update({
   id: '/rates',
   path: '/rates',
@@ -75,6 +82,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppStatementsRoute = AppStatementsRouteImport.update({
   id: '/statements',
   path: '/statements',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRunsIndexRoute = AppRunsIndexRouteImport.update({
@@ -96,9 +108,11 @@ export interface FileRoutesByFullPath {
   '/imports': typeof AppImportsRoute
   '/ledgers': typeof AppLedgersRoute
   '/people': typeof AppPeopleRoute
+  '/products': typeof AppProductsRoute
   '/rates': typeof AppRatesRoute
   '/settings': typeof AppSettingsRoute
   '/statements': typeof AppStatementsRoute
+  '/users': typeof AppUsersRoute
   '/runs/$runId': typeof AppRunsRunIdRoute
   '/runs/': typeof AppRunsIndexRoute
 }
@@ -109,9 +123,11 @@ export interface FileRoutesByTo {
   '/imports': typeof AppImportsRoute
   '/ledgers': typeof AppLedgersRoute
   '/people': typeof AppPeopleRoute
+  '/products': typeof AppProductsRoute
   '/rates': typeof AppRatesRoute
   '/settings': typeof AppSettingsRoute
   '/statements': typeof AppStatementsRoute
+  '/users': typeof AppUsersRoute
   '/': typeof AppIndexRoute
   '/runs/$runId': typeof AppRunsRunIdRoute
   '/runs': typeof AppRunsIndexRoute
@@ -125,9 +141,11 @@ export interface FileRoutesById {
   '/_app/imports': typeof AppImportsRoute
   '/_app/ledgers': typeof AppLedgersRoute
   '/_app/people': typeof AppPeopleRoute
+  '/_app/products': typeof AppProductsRoute
   '/_app/rates': typeof AppRatesRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/statements': typeof AppStatementsRoute
+  '/_app/users': typeof AppUsersRoute
   '/_app/': typeof AppIndexRoute
   '/_app/runs/$runId': typeof AppRunsRunIdRoute
   '/_app/runs/': typeof AppRunsIndexRoute
@@ -142,9 +160,11 @@ export interface FileRouteTypes {
     | '/imports'
     | '/ledgers'
     | '/people'
+    | '/products'
     | '/rates'
     | '/settings'
     | '/statements'
+    | '/users'
     | '/runs/$runId'
     | '/runs/'
   fileRoutesByTo: FileRoutesByTo
@@ -155,9 +175,11 @@ export interface FileRouteTypes {
     | '/imports'
     | '/ledgers'
     | '/people'
+    | '/products'
     | '/rates'
     | '/settings'
     | '/statements'
+    | '/users'
     | '/'
     | '/runs/$runId'
     | '/runs'
@@ -170,9 +192,11 @@ export interface FileRouteTypes {
     | '/_app/imports'
     | '/_app/ledgers'
     | '/_app/people'
+    | '/_app/products'
     | '/_app/rates'
     | '/_app/settings'
     | '/_app/statements'
+    | '/_app/users'
     | '/_app/'
     | '/_app/runs/$runId'
     | '/_app/runs/'
@@ -241,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPeopleRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/products': {
+      id: '/_app/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof AppProductsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/rates': {
       id: '/_app/rates'
       path: '/rates'
@@ -260,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/statements'
       fullPath: '/statements'
       preLoaderRoute: typeof AppStatementsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/runs/': {
@@ -285,9 +323,11 @@ interface AppRouteChildren {
   AppImportsRoute: typeof AppImportsRoute
   AppLedgersRoute: typeof AppLedgersRoute
   AppPeopleRoute: typeof AppPeopleRoute
+  AppProductsRoute: typeof AppProductsRoute
   AppRatesRoute: typeof AppRatesRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStatementsRoute: typeof AppStatementsRoute
+  AppUsersRoute: typeof AppUsersRoute
   AppIndexRoute: typeof AppIndexRoute
   AppRunsRunIdRoute: typeof AppRunsRunIdRoute
   AppRunsIndexRoute: typeof AppRunsIndexRoute
@@ -299,9 +339,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppImportsRoute: AppImportsRoute,
   AppLedgersRoute: AppLedgersRoute,
   AppPeopleRoute: AppPeopleRoute,
+  AppProductsRoute: AppProductsRoute,
   AppRatesRoute: AppRatesRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStatementsRoute: AppStatementsRoute,
+  AppUsersRoute: AppUsersRoute,
   AppIndexRoute: AppIndexRoute,
   AppRunsRunIdRoute: AppRunsRunIdRoute,
   AppRunsIndexRoute: AppRunsIndexRoute,
