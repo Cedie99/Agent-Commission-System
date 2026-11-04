@@ -3,23 +3,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { FIELDS_BY_TYPE, type ImportType } from '@ocs/shared';
+import { EngineSettingsCard, type EngineSetting } from '@/components/app/engine-settings';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Alert, Badge, Card, CardContent, CardHeader, CardTitle, Field, Input, PageHeader } from '@/components/ui/primitives';
 import { api } from '@/lib/api';
 import { can } from '@/lib/auth';
-import { fmtDate, todayIso } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/settings')({ component: SettingsPage });
 
-interface Setting {
-  id: string;
-  key: string;
-  value: unknown;
-  effectiveFrom: string;
-  isConfidential: boolean;
-  description: string | null;
-}
 interface MappingConfig {
   sheet?: string | number;
   headerRow: number;
@@ -34,13 +26,6 @@ interface Mapping {
   config: MappingConfig;
 }
 
-interface SettingForm {
-  key: string;
-  description: string | null;
-  isConfidential: boolean;
-  text: string;
-  effectiveFrom: string;
-}
 interface MappingForm {
   id: string | null;
   importType: ImportType;
@@ -53,33 +38,13 @@ interface MappingForm {
   base: MappingConfig | null;
 }
 
-const textareaClass = 'w-full rounded-md border border-input bg-card px-2.5 py-1.5 font-mono text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-
 function SettingsPage() {
   const qc = useQueryClient();
   // Confidential settings (graceDays) are filtered server-side for non-Finance roles.
-  const settings = useQuery({ queryKey: ['engine-settings'], queryFn: () => api<Setting[]>('/settings/engine') });
+  const settings = useQuery({ queryKey: ['engine-settings'], queryFn: () => api<EngineSetting[]>('/settings/engine') });
   const mappings = useQuery({ queryKey: ['mappings', 'all'], queryFn: () => api<Mapping[]>('/settings/import-mappings') });
-  const [setting, setSetting] = useState<SettingForm | null>(null);
-  const [settingError, setSettingError] = useState<string | null>(null);
   const [mapping, setMapping] = useState<MappingForm | null>(null);
 
-  // Rows come newest first within each key, so the first row of a key is its current version.
-  const latestIds = new Set<string>();
-  const seen = new Set<string>();
-  for (const s of settings.data ?? []) {
-    if (seen.has(s.key)) continue;
-    seen.add(s.key);
-    latestIds.add(s.id);
-  }
-
-  const saveSetting = useMutation({
-    mutationFn: (s: SettingForm) => api(`/settings/engine/${s.key}`, { method: 'PUT', json: { value: JSON.parse(s.text) as unknown, effectiveFrom: s.effectiveFrom } }),
-    onSuccess: () => {
-      setSetting(null);
-      void qc.invalidateQueries({ queryKey: ['engine-settings'] });
-    },
-  });
   const saveMapping = useMutation({
     mutationFn: (m: MappingForm) => {
       const columns = Object.fromEntries(
@@ -99,22 +64,6 @@ function SettingsPage() {
     },
   });
 
-  const openSetting = (s: Setting) => {
-    saveSetting.reset();
-    setSettingError(null);
-    setSetting({ key: s.key, description: s.description, isConfidential: s.isConfidential, text: JSON.stringify(s.value, null, 2), effectiveFrom: todayIso() });
-  };
-  const submitSetting = () => {
-    if (!setting) return;
-    try {
-      JSON.parse(setting.text);
-    } catch {
-      setSettingError('The value isn’t valid JSON. Text needs double quotes, e.g. "INVOICE_DATE"; lists look like ["EU", "TB"].');
-      return;
-    }
-    setSettingError(null);
-    saveSetting.mutate(setting);
-  };
   const openMapping = (m: Mapping | null, importType: ImportType) => {
     saveMapping.reset();
     const fields = FIELDS_BY_TYPE[importType];
@@ -132,43 +81,12 @@ function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Engine settings are effective-dated: each change is a new version from its effective date." />
+      <PageHeader title="Settings" description="The rules the calculation uses, and how ERIC6 import files are read." />
       <div className="grid gap-3 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Engine settings</CardTitle>
-          </CardHeader>
-          <table className="w-full text-[12.5px]">
-            <thead className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-3 py-1 text-left">Key</th>
-                <th className="px-3 py-1 text-left">Value</th>
-                <th className="px-3 py-1 text-left">From</th>
-                <th className="px-3 py-1" />
-              </tr>
-            </thead>
-            <tbody>
-              {settings.data?.map((s) => (
-                <tr key={s.id} className={`border-t border-border align-top ${latestIds.has(s.id) ? '' : 'text-muted-foreground'}`}>
-                  <td className="px-3 py-1.5">
-                    <div className="font-mono">{s.key}</div>
-                    {s.isConfidential && <Badge tone="danger">confidential · Finance only</Badge>}
-                    <div className="text-[11px] text-muted-foreground">{latestIds.has(s.id) ? s.description : 'older version'}</div>
-                  </td>
-                  <td className="max-w-[320px] break-words px-3 py-1.5 font-mono text-[11.5px]">{JSON.stringify(s.value)}</td>
-                  <td className="whitespace-nowrap px-3 py-1.5">{fmtDate(s.effectiveFrom)}</td>
-                  <td className="px-3 py-1.5 text-right">
-                    {latestIds.has(s.id) && can('settings:confidential') && (
-                      <Button variant="outline" size="sm" onClick={() => openSetting(s)}>
-                        Change
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+        <div>
+          {settings.error && <Alert className="mb-3">{settings.error.message}</Alert>}
+          <EngineSettingsCard settings={settings.data ?? []} />
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Import column mappings</CardTitle>
@@ -210,31 +128,6 @@ function SettingsPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Dialog open={!!setting} onOpenChange={(o) => !o && setSetting(null)}>
-        <DialogContent title={setting ? `Change ${setting.key}` : ''} description={setting?.description ?? undefined}>
-          {setting && (
-            <div className="flex flex-col gap-3">
-              {setting.isConfidential && <Alert tone="warning">Confidential: never shown to the Sales and RSR teams.</Alert>}
-              <Field label="New value (JSON)">
-                <textarea rows={Math.min(14, Math.max(3, setting.text.split('\n').length + 1))} className={textareaClass} value={setting.text} onChange={(e) => setSetting({ ...setting, text: e.target.value })} />
-              </Field>
-              <Field label="Effective from" hint="Runs already calculated keep the settings they were calculated with.">
-                <Input type="date" value={setting.effectiveFrom} onChange={(e) => setSetting({ ...setting, effectiveFrom: e.target.value })} />
-              </Field>
-              {(settingError || saveSetting.error) && <Alert>{settingError ?? saveSetting.error?.message}</Alert>}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setSetting(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={submitSetting} disabled={saveSetting.isPending}>
-                  Save new version
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!mapping} onOpenChange={(o) => !o && setMapping(null)}>
         <DialogContent title={mapping ? (mapping.id ? `Edit ${mapping.name}` : `New ${mapping.importType.toLowerCase()} mapping`) : ''} description="Separate alternative ERIC6 header names with |." className="max-w-2xl">
