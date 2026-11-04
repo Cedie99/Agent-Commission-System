@@ -1,14 +1,10 @@
 import { z } from 'zod';
 import type { RoleCode, RunStatus, RunType } from '../enums';
 import type { CommissionTeam } from '../roles';
+import { zYearMonth } from '../zod';
 
 /** GET /my-commission?month=YYYY-MM. Without a month the API picks the latest month with an approved week. */
-export const MyCommissionQuery = z.object({
-  month: z
-    .string()
-    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Must be a month YYYY-MM')
-    .optional(),
-});
+export const MyCommissionQuery = z.object({ month: zYearMonth.optional() });
 export type MyCommissionQuery = z.infer<typeof MyCommissionQuery>;
 
 /**
