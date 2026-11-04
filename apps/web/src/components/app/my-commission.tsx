@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Info } from 'lucide-react';
 import { Fragment, useState } from 'react';
-import { D, formatDecimal, formatPHP, sum, type Decimal, type MyCommissionView, type MyWeekView, type ResultLineView, type WaitingInvoiceView } from '@ocs/shared';
+import { D, formatDecimal, formatPHP, runTypeFor, sum, type Decimal, type MyCommissionView, type MyWeekView, type ResultLineView, type WaitingInvoiceView } from '@ocs/shared';
 import { bucketLabel, StatusBadge } from '@/components/app/format';
 import { Alert, Card, CardHeader, CardTitle, PageHeader, Select } from '@/components/ui/primitives';
 import { api, type Paged } from '@/lib/api';
@@ -51,40 +51,50 @@ export function MyCommissionDashboard() {
           ? `${fmtRange(unlocked[0]!.periodStart, unlocked[0]!.periodEnd)} is approved, not locked yet`
           : `${unlocked.length} weeks are approved, not locked yet`;
 
+  const header = (
+    <PageHeader
+      title="My commission"
+      description={[p.code, p.roleName, p.team, p.managerCode && `reports to ${p.managerCode}`].filter(Boolean).join(' · ')}
+      actions={
+        <>
+          <label htmlFor="my-month" className="text-xs text-muted-foreground">
+            Month
+          </label>
+          <Select
+            id="my-month"
+            value={v.month}
+            onChange={(e) => {
+              setMonth(e.target.value);
+              setPickedRunId(null);
+            }}
+            className="w-40"
+          >
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {monthLabel(m)}
+              </option>
+            ))}
+          </Select>
+        </>
+      }
+    />
+  );
+
+  // Sales and RSR roles other than AS are paid by the SP monthly run, which isn't built yet (the engine returns NOT_IMPLEMENTED).
+  if (runTypeFor(p.role) !== 'AS_WEEKLY') {
+    return (
+      <>
+        {header}
+        <Alert tone="info">
+          The system doesn't calculate {p.roleName} incentives yet. Once Finance sets the rules and approves a month, your commission will appear here.
+        </Alert>
+      </>
+    );
+  }
+
   return (
     <>
-      <PageHeader
-        title="My commission"
-        description={[p.code, p.roleName, p.team, p.managerCode && `reports to ${p.managerCode}`].filter(Boolean).join(' · ')}
-        actions={
-          <>
-            <label htmlFor="my-month" className="text-xs text-muted-foreground">
-              Month
-            </label>
-            <Select
-              id="my-month"
-              value={v.month}
-              onChange={(e) => {
-                setMonth(e.target.value);
-                setPickedRunId(null);
-              }}
-              className="w-40"
-            >
-              {months.map((m) => (
-                <option key={m} value={m}>
-                  {monthLabel(m)}
-                </option>
-              ))}
-            </Select>
-          </>
-        }
-      />
-
-      {p.role !== 'AS' && (
-        <Alert tone="info" className="mb-3">
-          The system doesn't calculate {p.roleName} incentives yet. They'll appear here once Finance sets the rules.
-        </Alert>
-      )}
+      {header}
 
       <Card className="mb-3 flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
         <Info className="size-3.5 shrink-0 text-ring" />

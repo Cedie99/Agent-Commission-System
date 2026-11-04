@@ -48,7 +48,7 @@ function LoginPage() {
               {busy ? 'Signing in…' : 'Sign in'}
             </Button>
             {/* TODO(SSO): "Sign in with Microsoft" (Entra ID) button. */}
-            <p className="text-[11px] text-muted-foreground">Dev users: admin / finance / ssd / vp / as1 @ocs.local (password from SEED_DEFAULT_PASSWORD)</p>
+            <p className="text-[11px] text-muted-foreground">Dev users: admin / finance / ssd / vp / as1 / ss1 / rsr1 @ocs.local (password from SEED_DEFAULT_PASSWORD)</p>
           </form>
         </CardContent>
       </Card>
