@@ -74,6 +74,12 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
 ];
 
+/** The permission a page needs, taken from the menu so the menu and the route guard always agree. */
+export function requiredPermission(pathname: string): Permission | null {
+  const item = NAV.flatMap((s) => s.items).find((i) => i.to !== '/' && (pathname === i.to || pathname.startsWith(`${i.to}/`)));
+  return item?.perm ?? null;
+}
+
 const CRUMBS: Record<string, string> = {
   '': 'Dashboard',
   imports: 'Imports',
@@ -137,7 +143,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             if (!items.length) return null;
             return (
               <div key={s.section} className="mb-3">
-                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.section}</div>
+                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {/* Finance sees Settings here too; "Admin" is only the heading for actual admins. */}
+                  {s.section === 'Admin' && !can('users:read') ? 'Setup' : s.section}
+                </div>
                 {items.map((i) => {
                   const active = i.to === '/' ? pathname === '/' : pathname.startsWith(i.to);
                   return (

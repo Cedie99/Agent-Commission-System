@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { LoginResponse } from '@ocs/shared';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ export const Route = createFileRoute('/login')({ component: LoginPage });
 
 function LoginPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [email, setEmail] = useState('finance@ocs.local');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +24,8 @@ function LoginPage() {
     try {
       const r = await api<LoginResponse>('/auth/login', { method: 'POST', json: { email, password } });
       setSession({ token: r.accessToken, user: r.user });
+      // Drop anything cached for a previous account, so it never shows to this one.
+      qc.clear();
       await navigate({ to: '/' });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
