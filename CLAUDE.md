@@ -68,6 +68,8 @@ Dev logins (password `SEED_DEFAULT_PASSWORD`, default `ChangeMe123!`): `admin@oc
 
 - Shared enums live in `packages/shared/src/enums.ts` **and** `apps/api/prisma/schema.prisma`. `apps/api/test/enum-sync.test.ts` fails if they drift.
 - Roles and permissions: `PERMISSIONS` in `packages/shared/src/roles.ts`, used by `@RequirePermission()` in the API and by `can()` in the web nav.
+- Sign-in accounts: the Users page / `apps/api/src/users` (Admin only). Sales and RSR team accounts must be linked to a
+  person in People, and an Admin can't remove Admin from, or disable, their own account (`users/rules.ts`).
 - Calendar dates are `'YYYY-MM-DD'` strings in the engine and on the wire, and `@db.Date` in the DB. Don't do timezone math.
 - After changing `packages/shared` or `packages/engine`, rebuild (`pnpm build:packages`), or keep `pnpm dev` running (tsup watch). The API consumes `dist/`.
 - Long work (import validation, run computation) runs in pg-boss jobs (`apps/api/src/jobs`). The UI polls status.
@@ -79,5 +81,5 @@ Dev logins (password `SEED_DEFAULT_PASSWORD`, default `ChangeMe123!`): `admin@oc
 - Statements and payout register
 - Ledgers (SalesBond, Penalty, TPArrangement, VouchFund: tables only)
 - Microsoft Entra SSO (TODOs in `common/auth.ts` and `auth.module.ts`)
-- Edit UIs for People, engine settings and import mappings (the APIs exist)
 - SM/NSM team visibility
+- Self-service password change and "forgot password" (Admin resets passwords on the Users page)

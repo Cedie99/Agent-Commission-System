@@ -51,7 +51,8 @@ The other dev users are `admin@`, `ssd@`, `vp@`, `as1@`, `ss1@` and `rsr1@ocs.lo
 4. **Submit** (finance) → **Approve** (sign in as vp) → **Lock** (finance). A locked run can't be changed.
 5. Sign in as `as1@ocs.local`: the **My commission** dashboard shows only your own lines (₱11,400.00 for October 2026), and no confidential details.
 6. Sign in as `admin@ocs.local`: the **Admin dashboard** shows the month's approved commission, runs that need action,
-   open exceptions, sign-in accounts and recent activity.
+   open exceptions, sign-in accounts and recent activity. Admin creates sign-in accounts and resets passwords on **Users**,
+   and edits People, Products and Settings from their pages.
 
 ## Commands
 
