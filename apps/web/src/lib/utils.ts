@@ -5,6 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** plural(1, 'line') → '1 line', plural(2, 'line') → '2 lines'. */
+export function plural(n: number, word: string) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+/** 'AS_WEEKLY' → 'AS weekly', 'SP_MONTHLY' → 'SP monthly'. */
+export function runTypeLabel(t: string | null | undefined) {
+  return t === 'AS_WEEKLY' ? 'AS weekly' : t === 'SP_MONTHLY' ? 'SP monthly' : (t ?? '');
+}
+
 export function fmtDateTime(iso: string | null | undefined) {
   if (!iso) return '';
   const d = new Date(iso);

@@ -5,17 +5,16 @@ import { Info } from 'lucide-react';
 import { Fragment, useState } from 'react';
 import { D, formatDecimal, formatPHP, runTypeFor, sum, type Decimal, type MyCommissionView, type MyWeekView, type ResultLineView, type WaitingInvoiceView } from '@ocs/shared';
 import { bucketLabel, StatusBadge } from '@/components/app/format';
+import { StatTile } from '@/components/app/stat-tile';
 import { Alert, Card, CardHeader, CardTitle, PageHeader, Select } from '@/components/ui/primitives';
 import { api, type Paged } from '@/lib/api';
-import { cn, fmtRange, monthLabel, recentMonths, todayIso } from '@/lib/utils';
+import { cn, fmtRange, monthLabel, plural, recentMonths, runTypeLabel, todayIso } from '@/lib/utils';
 
 /** Lines loaded for one week; more than this is rare, and "Open the week" shows them all. */
 const LINES_PAGE = 500;
 /** Invoices listed under "Waiting for full payment" before "and N more". */
 const WAITING_SHOWN = 6;
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-const runTypeLabel = (t: string | null) => (t === 'AS_WEEKLY' ? 'AS weekly' : t === 'SP_MONTHLY' ? 'SP monthly' : '');
 const pricingLabel = (p: string | null) => (p === 'STANDARD' ? 'Standard' : p === 'NON_STANDARD' ? 'Non-Standard' : '—');
 const componentLabel = (t: string) => t.charAt(0) + t.slice(1).toLowerCase();
 
@@ -102,10 +101,10 @@ export function MyCommissionDashboard() {
       </Card>
 
       <div className="mb-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Tile label={`Approved in ${monthName}`} value={formatPHP(t.approved)} sub={approvedSub} accent />
-        <Tile label="Final (locked)" value={formatPHP(t.locked)} sub={lockedSub} />
-        <Tile label="Volume commission" value={formatPHP(t.volume)} sub={`${plural(t.lineCount, 'line')} · ${formatDecimal(t.liters)} L`} />
-        <Tile label="Price commission" value={formatPHP(t.price)} sub={t.priceLineCount > 0 ? `${plural(t.priceLineCount, 'line')} sold above SRP` : 'no lines sold above SRP'} />
+        <StatTile label={`Approved in ${monthName}`} value={formatPHP(t.approved)} sub={approvedSub} tone="primary" />
+        <StatTile label="Final (locked)" value={formatPHP(t.locked)} sub={lockedSub} />
+        <StatTile label="Volume commission" value={formatPHP(t.volume)} sub={`${plural(t.lineCount, 'line')} · ${formatDecimal(t.liters)} L`} />
+        <StatTile label="Price commission" value={formatPHP(t.price)} sub={t.priceLineCount > 0 ? `${plural(t.priceLineCount, 'line')} sold above SRP` : 'no lines sold above SRP'} />
       </div>
 
       <div className="mb-3 grid gap-3 lg:grid-cols-[3fr_2fr]">
@@ -119,16 +118,6 @@ export function MyCommissionDashboard() {
         <Card className="px-3 py-6 text-center text-[13px] text-muted-foreground">No approved weeks in {monthLabel(v.month)} yet.</Card>
       )}
     </>
-  );
-}
-
-function Tile({ label, value, sub, accent }: { label: string; value: string; sub: string; accent?: boolean }) {
-  return (
-    <Card className="flex flex-col gap-1 px-3.5 py-3">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={cn('font-mono text-[22px] font-medium tabular-nums', accent && 'text-primary')}>{value}</div>
-      <div className="text-xs text-muted-foreground">{sub}</div>
-    </Card>
   );
 }
 
