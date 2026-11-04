@@ -2,12 +2,14 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import type { ComputeRunView } from '@ocs/shared';
 import { Peso, StatusBadge } from '@/components/app/format';
+import { MyCommissionDashboard } from '@/components/app/my-commission';
 import { Card, CardContent, CardHeader, CardTitle, PageHeader, Placeholder } from '@/components/ui/primitives';
 import { api } from '@/lib/api';
-import { can, getSession } from '@/lib/auth';
+import { can, getSession, isAgentView } from '@/lib/auth';
 import { fmtDate } from '@/lib/utils';
 
-export const Route = createFileRoute('/_app/')({ component: Dashboard });
+/** Sales and RSR team members land on their own commission; everyone else on the overview. */
+export const Route = createFileRoute('/_app/')({ component: () => (isAgentView() ? <MyCommissionDashboard /> : <Dashboard />) });
 
 function Dashboard() {
   const runs = useQuery({ queryKey: ['runs'], queryFn: () => api<ComputeRunView[]>('/compute-runs'), enabled: can('runs:read') });
