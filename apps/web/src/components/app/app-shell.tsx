@@ -7,17 +7,20 @@ import {
   FileSpreadsheet,
   FileText,
   LayoutDashboard,
+  List,
   LogOut,
+  Package,
   Percent,
   Settings,
   TriangleAlert,
   Upload,
   Users,
+  UserCog,
   Building2,
   type LucideIcon,
 } from 'lucide-react';
-import type { Permission } from '@ocs/shared';
-import { can, getSession, setSession } from '@/lib/auth';
+import { commissionTeam, type Permission } from '@ocs/shared';
+import { can, getSession, isAgentView, setSession } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -25,7 +28,21 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   perm: Permission;
+  /** Small note after the label, e.g. 'soon' for a page that isn't built. */
+  tag?: string;
 }
+
+/** Sales and RSR team members only see their own commission. */
+const AGENT_NAV: { section: string; items: NavItem[] }[] = [
+  {
+    section: 'My commission',
+    items: [
+      { to: '/', label: 'Dashboard', icon: LayoutDashboard, perm: 'dashboard:read' },
+      { to: '/runs', label: 'My weeks', icon: List, perm: 'runs:read' },
+      { to: '/statements', label: 'Statements', icon: FileText, perm: 'statements:read', tag: 'soon' },
+    ],
+  },
+];
 
 const NAV: { section: string; items: NavItem[] }[] = [
   { section: 'Overview', items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, perm: 'dashboard:read' }] },
@@ -34,6 +51,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { to: '/imports', label: 'Imports', icon: Upload, perm: 'imports:read' },
       { to: '/customers', label: 'Customers', icon: Building2, perm: 'customers:read' },
+      { to: '/products', label: 'Products', icon: Package, perm: 'customers:read' },
       { to: '/people', label: 'People', icon: Users, perm: 'people:read' },
       { to: '/rates', label: 'Rates & Pricelists', icon: Percent, perm: 'rates:read' },
     ],
@@ -47,14 +65,28 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { to: '/ledgers', label: 'Ledgers', icon: BookOpen, perm: 'ledgers:read' },
     ],
   },
-  { section: 'Admin', items: [{ to: '/settings', label: 'Settings', icon: Settings, perm: 'settings:read' }] },
+  {
+    section: 'Admin',
+    items: [
+      { to: '/users', label: 'Users', icon: UserCog, perm: 'users:read' },
+      { to: '/settings', label: 'Settings', icon: Settings, perm: 'settings:read' },
+    ],
+  },
 ];
+
+/** The permission a page needs, taken from the menu so the menu and the route guard always agree. */
+export function requiredPermission(pathname: string): Permission | null {
+  const item = NAV.flatMap((s) => s.items).find((i) => i.to !== '/' && (pathname === i.to || pathname.startsWith(`${i.to}/`)));
+  return item?.perm ?? null;
+}
 
 const CRUMBS: Record<string, string> = {
   '': 'Dashboard',
   imports: 'Imports',
   customers: 'Customers',
+  products: 'Products',
   people: 'People',
+  users: 'Users',
   rates: 'Rates & Pricelists',
   runs: 'Compute Runs',
   exceptions: 'Exceptions',
@@ -63,10 +95,11 @@ const CRUMBS: Record<string, string> = {
   settings: 'Settings',
 };
 
-function Breadcrumb() {
+function Breadcrumb({ agent }: { agent: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const parts = pathname.split('/').filter(Boolean);
-  const crumbs = [{ to: '/', label: 'Home' }, ...parts.map((p, i) => ({ to: `/${parts.slice(0, i + 1).join('/')}`, label: CRUMBS[p] ?? (p.length > 12 ? `${p.slice(0, 8)}…` : p) }))];
+  const label = (p: string) => (agent && p === 'runs' ? 'My weeks' : (CRUMBS[p] ?? (p.length > 12 ? `${p.slice(0, 8)}…` : p)));
+  const crumbs = [{ to: '/', label: 'Home' }, ...parts.map((p, i) => ({ to: `/${parts.slice(0, i + 1).join('/')}`, label: label(p) }))];
   return (
     <nav className="flex items-center gap-1 text-xs text-muted-foreground" aria-label="Breadcrumb">
       {crumbs.map((c, i) => (
@@ -84,6 +117,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const agent = isAgentView();
+  const roles = session?.user.roles ?? [];
+  const team = commissionTeam(roles);
 
   function logout() {
     setSession(null);
@@ -102,18 +138,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto px-2 py-2">
-          {NAV.map((s) => {
+          {(agent ? AGENT_NAV : NAV).map((s) => {
             const items = s.items.filter((i) => can(i.perm));
             if (!items.length) return null;
             return (
               <div key={s.section} className="mb-3">
-                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.section}</div>
+                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {/* Finance sees Settings here too; "Admin" is only the heading for actual admins. */}
+                  {s.section === 'Admin' && !can('users:read') ? 'Setup' : s.section}
+                </div>
                 {items.map((i) => {
                   const active = i.to === '/' ? pathname === '/' : pathname.startsWith(i.to);
                   return (
                     <Link key={i.to} to={i.to} className={cn('flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] hover:bg-accent', active && 'bg-accent font-medium text-primary')}>
                       <i.icon className="size-3.5" />
                       {i.label}
+                      {i.tag && <span className="ml-auto text-[10px] font-normal text-muted-foreground">{i.tag}</span>}
                     </Link>
                   );
                 })}
@@ -124,11 +164,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-4">
-          <Breadcrumb />
+          <Breadcrumb agent={agent} />
           <div className="flex items-center gap-3">
             <div className="text-right leading-tight">
               <div className="text-[13px] font-medium">{session?.user.displayName}</div>
-              <div className="text-[10px] text-muted-foreground">{session?.user.roles.join(', ')}</div>
+              <div className="text-[10px] text-muted-foreground">
+                {roles.join(', ')}
+                {team && ` · ${team}`}
+              </div>
             </div>
             <button onClick={logout} className="rounded p-1.5 hover:bg-accent" title="Sign out" aria-label="Sign out">
               <LogOut className="size-4" />

@@ -45,6 +45,19 @@ export const ROLE_CODES = [
   'SUPPORT',
 ] as const;
 export type RoleCode = (typeof ROLE_CODES)[number];
+export const ROLE_LABELS: Record<RoleCode, string> = {
+  ADMIN: 'Administrator',
+  FINANCE: 'Finance',
+  SSD: 'Sales Support Department',
+  VP: 'VP - Sales & Marketing',
+  NSM: 'National Sales Manager',
+  SM: 'Sales Manager',
+  RSRM: 'RSR Manager',
+  SS: 'Sales Specialist',
+  RSR: 'Regional Sales Representative',
+  AS: 'Account Specialist',
+  SUPPORT: 'Support',
+};
 
 export const PERSON_STATUSES = ['ACTIVE', 'INACTIVE', 'RESIGNED'] as const;
 export type PersonStatus = (typeof PERSON_STATUSES)[number];
