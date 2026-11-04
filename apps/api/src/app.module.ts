@@ -19,6 +19,7 @@ import { PeopleModule } from './people/people.module';
 import { ProductsModule } from './products/products.module';
 import { RatesModule } from './rates/rates.module';
 import { SettingsModule } from './settings/settings.module';
+import { UsersModule } from './users/users.module';
 
 @Controller()
 class HealthController {
@@ -49,6 +50,7 @@ class HealthController {
     ComputeRunsModule,
     MyCommissionModule,
     AdminModule,
+    UsersModule,
     ExceptionsModule,
     LedgersModule,
   ],
