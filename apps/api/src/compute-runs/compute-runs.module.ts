@@ -29,7 +29,8 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { AuditService } from '../audit/audit.service';
 import { CurrentUser, RequirePermission, type RequestUser } from '../common/auth';
-import { dateFromIso, isoDate, isoDateOrNull, toD, toDOrNull, toPrisma, wire, wireReq } from '../common/convert';
+import { dateFromIso, isoDate, isoDateOrNull, toD, toPrisma, wire, wireReq } from '../common/convert';
+import { toEngineCollection, toEngineLine } from '../common/engine-input';
 import { PrismaService } from '../common/prisma.service';
 import { ZodPipe } from '../common/zod.pipe';
 import { JobsService, QUEUES } from '../jobs/jobs.service';
@@ -110,32 +111,8 @@ export class ComputeRunsService implements OnModuleInit {
         select: { invoiceNo: true, lineNo: true },
       });
 
-      const lines: InvoiceLineInput[] = lineRows.map((l) => ({
-        invoiceNo: l.invoiceNo,
-        lineNo: l.lineNo,
-        invoiceDate: isoDate(l.invoiceDate),
-        customerId: l.customerId,
-        productId: l.productId,
-        channel: l.channel,
-        accountType: l.accountType,
-        statedTermDays: l.statedTermDays,
-        liters: toD(l.liters),
-        qty: toD(l.qty),
-        unitPrice: toD(l.unitPrice),
-        pricelistPrice: toDOrNull(l.pricelistPrice),
-        approvedStandardDiscount: l.approvedStandardDiscount,
-        invoiceTotal: toDOrNull(l.invoiceTotal),
-        asId: l.asId,
-        ssId: l.ssId,
-        smId: l.smId,
-      }));
-      const collections: CollectionInput[] = collRows.map((c) => ({
-        invoiceNo: c.invoiceNo,
-        amount: toD(c.amount),
-        clearedDate: isoDateOrNull(c.clearedDate),
-        status: c.status,
-        reference: c.checkNo ? `${c.reference}/${c.checkNo}` : c.reference,
-      }));
+      const lines: InvoiceLineInput[] = lineRows.map(toEngineLine);
+      const collections: CollectionInput[] = collRows.map(toEngineCollection);
 
       const out = computeRun(rs, {
         runType: run.runType,

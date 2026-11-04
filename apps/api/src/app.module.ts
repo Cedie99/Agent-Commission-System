@@ -13,6 +13,7 @@ import { ExceptionsModule } from './exceptions/exceptions.module';
 import { ImportsModule } from './imports/imports.module';
 import { JobsModule } from './jobs/jobs.service';
 import { LedgersModule } from './ledgers/ledgers.module';
+import { MyCommissionModule } from './my-commission/my-commission.module';
 import { PeopleModule } from './people/people.module';
 import { ProductsModule } from './products/products.module';
 import { RatesModule } from './rates/rates.module';
@@ -45,6 +46,7 @@ class HealthController {
     PeopleModule,
     ProductsModule,
     ComputeRunsModule,
+    MyCommissionModule,
     ExceptionsModule,
     LedgersModule,
   ],
