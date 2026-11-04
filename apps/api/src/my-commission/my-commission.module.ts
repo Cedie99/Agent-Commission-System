@@ -1,6 +1,6 @@
 import { Controller, Get, Injectable, Module, NotFoundException, Query } from '@nestjs/common';
 import { buildInvoiceContexts } from '@ocs/engine';
-import { commissionTeam, D, MyCommissionQuery, ZERO, type MyCommissionView, type RunStatus } from '@ocs/shared';
+import { commissionTeam, D, MyCommissionQuery, runTypeFor, ZERO, type MyCommissionView, type RunStatus, type RunType } from '@ocs/shared';
 import { CurrentUser, RequirePermission, type RequestUser } from '../common/auth';
 import { dateFromIso, isoDate, toD } from '../common/convert';
 import { toEngineCollection, toEngineLine } from '../common/engine-input';
@@ -24,10 +24,12 @@ export class MyCommissionService {
     if (!person) throw new NotFoundException('Your person record was not found.');
     const role = await this.prisma.role.findUnique({ where: { code: person.role } });
 
-    const month = q.month ?? (await this.latestMonth(personId)) ?? isoDate(new Date()).slice(0, 7);
+    const runType = runTypeFor(person.role);
+    const weekly = runType === 'AS_WEEKLY';
+    const month = q.month ?? (await this.latestMonth(personId, runType)) ?? isoDate(new Date()).slice(0, 7);
     const { first, last } = monthBounds(month);
     const candidates = await this.prisma.computeRun.findMany({
-      where: { status: { in: PAYEE_VISIBLE_STATUSES }, periodStart: { lte: dateFromIso(last) }, periodEnd: { gte: dateFromIso(first) } },
+      where: { runType, status: { in: PAYEE_VISIBLE_STATUSES }, periodStart: { lte: dateFromIso(last) }, periodEnd: { gte: dateFromIso(first) } },
     });
     const runs: MonthRun[] = candidates
       .map((r) => ({ id: r.id, runType: r.runType, periodStart: isoDate(r.periodStart), periodEnd: isoDate(r.periodEnd), status: r.status as RunStatus }))
@@ -39,15 +41,16 @@ export class MyCommissionService {
         where: { payeeId: personId, resultLine: { runId: { in: runIds } } },
         select: { type: true, amount: true, resultLineId: true, resultLine: { select: { runId: true, salesInvoiceLine: { select: { liters: true } } } } },
       }),
-      // Held lines have no components, so they are matched by the AS frozen on the invoice line.
-      this.prisma.computeResultLine.count({ where: { runId: { in: runIds }, status: 'EXCEPTION', salesInvoiceLine: { asId: personId } } }),
-      this.waitingForPayment(personId),
+      // Held lines and unpaid invoices follow the AS frozen on each invoice line, so they only apply to Account Specialists.
+      weekly ? this.prisma.computeResultLine.count({ where: { runId: { in: runIds }, status: 'EXCEPTION', salesInvoiceLine: { asId: personId } } }) : 0,
+      weekly ? this.waitingForPayment(personId) : { count: 0, items: [] },
     ]);
 
     const summary = summarizeMonth(
       month,
       runs,
       components.map((c) => ({ runId: c.resultLine.runId, resultLineId: c.resultLineId, type: c.type, amount: toD(c.amount), liters: toD(c.resultLine.salesInvoiceLine.liters) })),
+      weekly,
     );
     return {
       month,
@@ -66,9 +69,9 @@ export class MyCommissionService {
   }
 
   /** The month of my latest approved or locked run, so the dashboard opens where the money is. */
-  private async latestMonth(personId: string): Promise<string | null> {
+  private async latestMonth(personId: string, runType: RunType): Promise<string | null> {
     const run = await this.prisma.computeRun.findFirst({
-      where: { status: { in: PAYEE_VISIBLE_STATUSES }, resultLines: { some: { components: { some: { payeeId: personId } } } } },
+      where: { runType, status: { in: PAYEE_VISIBLE_STATUSES }, resultLines: { some: { components: { some: { payeeId: personId } } } } },
       orderBy: [{ periodEnd: 'desc' }, { periodStart: 'desc' }],
       select: { periodStart: true, periodEnd: true },
     });

@@ -19,6 +19,7 @@ import { Prisma } from '@prisma/client';
 import { computeRun, serializeRuleSet, type CollectionInput, type InvoiceLineInput } from '@ocs/engine';
 import {
   CreateRunDto,
+  runTypeFor,
   TransitionRunDto,
   type ComputeRunView,
   type ResultLineView,
@@ -255,7 +256,8 @@ export class ComputeRunsService implements OnModuleInit {
 
   async list(user: RequestUser) {
     const rows = await this.prisma.computeRun.findMany({
-      where: isPayeeScoped(user.roles) ? { status: { in: PAYEE_VISIBLE_STATUSES } } : {},
+      // Agents see approved/locked runs of the type that pays them (AS weekly or SP monthly).
+      where: isPayeeScoped(user.roles) ? { status: { in: PAYEE_VISIBLE_STATUSES }, runType: { in: [...new Set(user.roles.map(runTypeFor))] } } : {},
       orderBy: [{ periodEnd: 'desc' }, { createdAt: 'desc' }],
       take: 200,
     });

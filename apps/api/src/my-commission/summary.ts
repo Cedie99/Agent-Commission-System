@@ -63,11 +63,13 @@ const byEndDesc = (a: MyWeekView, b: MyWeekView) => b.periodEnd.localeCompare(a.
 /**
  * Totals and weeks for one month. Amounts are sums of the stored (already rounded) components,
  * so they foot to the run totals. Runs whose period belongs to another month are ignored.
+ * `weekly` adds the month's Mon–Sun weeks that no run covers (weekly-paid roles only).
  */
 export function summarizeMonth(
   month: string,
   runs: MonthRun[],
   components: MyComponent[],
+  weekly = true,
 ): { totals: MyCommissionTotals; weeks: MyWeekView[]; latestRunId: string | null } {
   const inMonth = runs.filter((r) => monthOf(r.periodStart, r.periodEnd) === month);
   const runIds = new Set(inMonth.map((r) => r.id));
@@ -91,7 +93,7 @@ export function summarizeMonth(
     };
   });
   // Weeks of the month that no approved run covers stay visible, with no amount.
-  const openWeeks: MyWeekView[] = weekSlots(month)
+  const openWeeks: MyWeekView[] = (weekly ? weekSlots(month) : [])
     .filter((s) => !inMonth.some((r) => r.periodStart <= s.periodEnd && r.periodEnd >= s.periodStart))
     .map((s) => ({ ...s, runId: null, runType: null, status: null, volume: '0.00', price: '0.00', total: '0.00', lineCount: 0 }));
   const weeks = [...runWeeks, ...openWeeks].sort((a, b) => a.periodStart.localeCompare(b.periodStart) || a.periodEnd.localeCompare(b.periodEnd));

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildInvoiceContexts, type CollectionInput, type InvoiceLineInput } from '@ocs/engine';
-import { D, ZERO } from '@ocs/shared';
+import { D, runTypeFor, ZERO } from '@ocs/shared';
 import { monthBounds, monthOf, summarizeMonth, waitingInvoices, weekday, weekSlots, type MonthRun, type MyComponent } from '../src/my-commission/summary';
 
 const run = (id: string, periodStart: string, periodEnd: string, status: MonthRun['status'] = 'APPROVED'): MonthRun => ({ id, runType: 'AS_WEEKLY', periodStart, periodEnd, status });
@@ -95,6 +95,18 @@ describe('summarizeMonth', () => {
     const s = summarizeMonth('2026-10', [run('r1', '2026-10-05', '2026-10-11'), run('r2', '2026-10-12', '2026-10-18')], [comp('r1', 'a', 'VOLUME', '10.0000', '1.0000')]);
     expect(s.latestRunId).toBe('r1');
     expect(s.weeks.find((w) => w.runId === 'r2')).toMatchObject({ total: '0.00', lineCount: 0 });
+  });
+
+  it('pays Account Specialists weekly and every other Sales and RSR role monthly', () => {
+    expect(runTypeFor('AS')).toBe('AS_WEEKLY');
+    for (const role of ['SS', 'SM', 'NSM', 'RSR', 'RSRM'] as const) expect(runTypeFor(role)).toBe('SP_MONTHLY');
+  });
+
+  it('lists no empty weeks for a monthly-paid role', () => {
+    const s = summarizeMonth('2026-10', [], [], false);
+    expect(s.weeks).toEqual([]);
+    expect(s.totals.approved).toBe('0.00');
+    expect(s.latestRunId).toBeNull();
   });
 
   it('does not count a forfeited (₱0) price component as sold above SRP', () => {
