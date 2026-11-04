@@ -39,7 +39,8 @@ pnpm dev
 ```
 
 Sign in at http://localhost:5173 as `finance@ocs.local` with password `ChangeMe123!` (from `SEED_DEFAULT_PASSWORD`).
-The other dev users are `admin@`, `ssd@`, `vp@` and `as1@ocs.local`.
+The other dev users are `admin@`, `ssd@`, `vp@`, `as1@`, `ss1@` and `rsr1@ocs.local`.
+`as1` (Account Specialist), `ss1` (Sales Specialist) and `rsr1` (RSR) only ever see their own commission.
 
 ## Try it
 

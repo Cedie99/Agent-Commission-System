@@ -61,7 +61,8 @@ pnpm --filter @ocs/api smoke   # end-to-end check against a running API on a fre
 - Golden cases: drop JSON/CSV into `packages/engine/test/golden/cases/` (format in its README).
 
 Dev logins (password `SEED_DEFAULT_PASSWORD`, default `ChangeMe123!`): `admin@ocs.local`, `finance@ocs.local`,
-`ssd@ocs.local`, `vp@ocs.local`, `as1@ocs.local` (AS-001).
+`ssd@ocs.local`, `vp@ocs.local`, `as1@ocs.local` (AS-001), `ss1@ocs.local` (SS-001, Sales team) and `rsr1@ocs.local`
+(RSR-001, RSR team). The last three only ever see their own commission.
 
 ## Conventions
 
