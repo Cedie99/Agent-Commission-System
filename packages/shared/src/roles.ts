@@ -1,4 +1,4 @@
-import type { RoleCode } from './enums';
+import type { RoleCode, RunType } from './enums';
 
 /**
  * Roles allowed to see confidential computation details (grace period, actual days,
@@ -53,6 +53,11 @@ export function canSeeConfidential(roles: readonly RoleCode[]): boolean {
  */
 export function isPayeeScoped(roles: readonly RoleCode[]): boolean {
   return !hasPermission(roles, 'runs:create') && !hasPermission(roles, 'runs:approve');
+}
+
+/** The run that pays a commission-earning role: Account Specialists weekly, every other Sales and RSR role monthly. */
+export function runTypeFor(role: RoleCode): RunType {
+  return role === 'AS' ? 'AS_WEEKLY' : 'SP_MONTHLY';
 }
 
 export type CommissionTeam = 'Sales team' | 'RSR team';
