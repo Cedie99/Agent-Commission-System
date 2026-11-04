@@ -41,6 +41,7 @@ Step-by-step guide for the AS_WEEKLY flow, using the sample files in `samples/`.
 
 1. Log in as Finance again and click **Lock**.
 2. A locked run is final and can't be changed.
-3. After approval, the agent (`as1@ocs.local`) can see their own commission.
+3. After approval, the agent (`as1@ocs.local`) can see their own commission. Their **My commission** dashboard shows the month's
+   approved and locked totals, each week, their invoices still waiting for full payment, and every paid line with how it was worked out.
 
 Statements and the payout register aren't built yet, so for now the process ends at Lock.

@@ -48,7 +48,7 @@ The other dev users are `admin@`, `ssd@`, `vp@` and `as1@ocs.local`.
 3. The results grid shows Volume and Price commission per line. Click a line to see each component's explanation.
    Expected: ₱14,600.00 total (see [samples/README.md](samples/README.md)).
 4. **Submit** (finance) → **Approve** (sign in as vp) → **Lock** (finance). A locked run can't be changed.
-5. Sign in as `as1@ocs.local`: you see only your own lines, and no confidential details.
+5. Sign in as `as1@ocs.local`: the **My commission** dashboard shows only your own lines (₱11,400.00 for October 2026), and no confidential details.
 
 ## Commands
 
