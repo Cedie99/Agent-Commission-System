@@ -38,12 +38,7 @@ export function allowedTransitions(run: { status: RunStatus; submittedById: stri
   return TRANSITIONS.filter((t) => t.from === run.status && checkTransition(run, t.to, user).ok).map((t) => ({ to: t.to, label: t.label }));
 }
 
-/**
- * Payee-scoped users (AS, SS, RSR, …) only see their own lines in APPROVED/LOCKED runs.
- * TODO: SM/NSM team scoping via Person.managerId once statements are built.
- */
-export function isPayeeScoped(roles: readonly RoleCode[]): boolean {
-  return !hasPermission(roles, 'runs:create') && !hasPermission(roles, 'runs:approve');
-}
+/** Moved to @ocs/shared so the web app scopes its screens the same way. */
+export { isPayeeScoped } from '@ocs/shared';
 
 export const PAYEE_VISIBLE_STATUSES: RunStatus[] = ['APPROVED', 'LOCKED'];

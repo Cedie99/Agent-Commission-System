@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import type { LoginResponse } from '@ocs/shared';
@@ -15,6 +16,7 @@ const GOLD = '#F5C518';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [email, setEmail] = useState(import.meta.env.DEV ? 'finance@ocs.local' : '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,6 +30,8 @@ function LoginPage() {
     try {
       const r = await api<LoginResponse>('/auth/login', { method: 'POST', json: { email, password } });
       setSession({ token: r.accessToken, user: r.user });
+      // Drop anything cached for a previous account, so it never shows to this one.
+      qc.clear();
       await navigate({ to: '/' });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -144,7 +148,7 @@ function LoginPage() {
 
           {import.meta.env.DEV && (
             <p className="mt-10 border-t border-black/[0.07] pt-4 text-[11px] leading-relaxed text-[#0A0A0A]/40">
-              Dev users: admin / finance / ssd / vp / as1 @ocs.local (password from SEED_DEFAULT_PASSWORD)
+              Dev users: admin / finance / ssd / vp / as1 / ss1 / rsr1 @ocs.local (password from SEED_DEFAULT_PASSWORD)
             </p>
           )}
         </div>

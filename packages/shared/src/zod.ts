@@ -21,6 +21,9 @@ export function isValidIsoDate(s: string): boolean {
 /** 'YYYY-MM-DD' calendar date (no time, no timezone). */
 export const zIsoDate = z.string().refine(isValidIsoDate, { message: 'Must be a date YYYY-MM-DD' });
 
+/** 'YYYY-MM' calendar month. */
+export const zYearMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Must be a month YYYY-MM');
+
 /**
  * Spreadsheet date cell → 'YYYY-MM-DD'. Accepts JS Date (ExcelJS; UTC-based),
  * 'YYYY-MM-DD', 'MM/DD/YYYY' (ERIC6 default, assumed US order) and Excel serial numbers.

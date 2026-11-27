@@ -39,7 +39,8 @@ pnpm dev
 ```
 
 Sign in at http://localhost:5173 as `finance@ocs.local` with password `ChangeMe123!` (from `SEED_DEFAULT_PASSWORD`).
-The other dev users are `admin@`, `ssd@`, `vp@` and `as1@ocs.local`.
+The other dev users are `admin@`, `ssd@`, `vp@`, `as1@`, `ss1@` and `rsr1@ocs.local`.
+`as1` (Account Specialist), `ss1` (Sales Specialist) and `rsr1` (RSR) only ever see their own commission.
 
 ## Try it
 
@@ -48,7 +49,10 @@ The other dev users are `admin@`, `ssd@`, `vp@` and `as1@ocs.local`.
 3. The results grid shows Volume and Price commission per line. Click a line to see each component's explanation.
    Expected: ₱14,600.00 total (see [samples/README.md](samples/README.md)).
 4. **Submit** (finance) → **Approve** (sign in as vp) → **Lock** (finance). A locked run can't be changed.
-5. Sign in as `as1@ocs.local`: you see only your own lines, and no confidential details.
+5. Sign in as `as1@ocs.local`: the **My commission** dashboard shows only your own lines (₱11,400.00 for October 2026), and no confidential details.
+6. Sign in as `admin@ocs.local`: the **Admin dashboard** shows the month's approved commission, runs that need action,
+   open exceptions, sign-in accounts and recent activity. Admin creates sign-in accounts and resets passwords on **Users**,
+   and edits People, Products and Settings from their pages.
 
 ## Commands
 

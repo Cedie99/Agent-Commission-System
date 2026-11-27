@@ -1,4 +1,4 @@
-import type { RoleCode } from './enums';
+import type { RoleCode, RunType } from './enums';
 
 /**
  * Roles allowed to see confidential computation details (grace period, actual days,
@@ -33,6 +33,9 @@ export const PERMISSIONS = {
   'settings:read': ['ADMIN', 'FINANCE'],
   'settings:confidential': ['ADMIN', 'FINANCE'],
   'audit:read': ['ADMIN', 'FINANCE'],
+  'admin:dashboard': ['ADMIN'],
+  'users:read': ['ADMIN'],
+  'users:write': ['ADMIN'],
 } as const satisfies Record<string, readonly RoleCode[]>;
 
 export type Permission = keyof typeof PERMISSIONS;
@@ -44,4 +47,40 @@ export function hasPermission(roles: readonly RoleCode[], perm: Permission): boo
 
 export function canSeeConfidential(roles: readonly RoleCode[]): boolean {
   return roles.some((r) => CONFIDENTIAL_VIEWER_ROLES.includes(r));
+}
+
+/**
+ * Payee-scoped users (AS, SS, RSR, …) only see their own lines in APPROVED/LOCKED runs.
+ * Anyone who can create or approve runs (Finance, SSD, VP, Admin) is not scoped.
+ * TODO: SM/NSM team scoping via Person.managerId once statements are built.
+ */
+export function isPayeeScoped(roles: readonly RoleCode[]): boolean {
+  return !hasPermission(roles, 'runs:create') && !hasPermission(roles, 'runs:approve');
+}
+
+/** The run that pays a commission-earning role: Account Specialists weekly, every other Sales and RSR role monthly. */
+export function runTypeFor(role: RoleCode): RunType {
+  return role === 'AS' ? 'AS_WEEKLY' : 'SP_MONTHLY';
+}
+
+export type CommissionTeam = 'Sales team' | 'RSR team';
+
+/** AS reports to SS in the reporting line, so Account Specialists are on the Sales team. */
+const TEAM_BY_ROLE: Partial<Record<RoleCode, CommissionTeam>> = {
+  AS: 'Sales team',
+  SS: 'Sales team',
+  SM: 'Sales team',
+  NSM: 'Sales team',
+  VP: 'Sales team',
+  RSR: 'RSR team',
+  RSRM: 'RSR team',
+};
+
+/** The team a commission earner belongs to, or null for roles that don't earn commission. */
+export function commissionTeam(roles: readonly RoleCode[]): CommissionTeam | null {
+  for (const r of roles) {
+    const team = TEAM_BY_ROLE[r];
+    if (team) return team;
+  }
+  return null;
 }

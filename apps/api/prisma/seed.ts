@@ -85,6 +85,7 @@ const PEOPLE = [
   { code: 'SS-001', fullName: 'Sales Specialist One (sample)', role: 'SS' as const, manager: 'SM-001' },
   { code: 'AS-001', fullName: 'Account Specialist One (sample)', role: 'AS' as const, manager: 'SS-001' },
   { code: 'AS-002', fullName: 'Account Specialist Two (sample)', role: 'AS' as const, manager: 'SS-001' },
+  { code: 'RSR-001', fullName: 'Regional Sales Representative One (sample)', role: 'RSR' as const, manager: null },
 ];
 
 const USERS: { email: string; roles: RoleCode[]; person?: string }[] = [
@@ -93,6 +94,9 @@ const USERS: { email: string; roles: RoleCode[]; person?: string }[] = [
   { email: 'ssd@ocs.local', roles: ['SSD'] },
   { email: 'vp@ocs.local', roles: ['VP'], person: 'VP-001' },
   { email: 'as1@ocs.local', roles: ['AS'], person: 'AS-001' },
+  // Sales team and RSR team logins: they only ever see their own commission.
+  { email: 'ss1@ocs.local', roles: ['SS'], person: 'SS-001' },
+  { email: 'rsr1@ocs.local', roles: ['RSR'], person: 'RSR-001' },
 ];
 
 const PRODUCTS = [
